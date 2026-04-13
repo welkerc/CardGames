@@ -74,6 +74,18 @@
                 </div>
                 <span class="play-btn">Play Now</span>
             </a>
+
+            <a href="videopoker/" class="game-card">
+                <div class="game-icon">🎰</div>
+                <h2>Video Poker</h2>
+                <p>Classic casino video poker with Jacks or Better & Deuces Wild</p>
+                <div class="game-features">
+                    <span>Jacks or Better</span>
+                    <span>Deuces Wild</span>
+                    <span>Hold/Draw</span>
+                </div>
+                <span class="play-btn">Play Now</span>
+            </a>
         </div>
 
         <section class="rules-section">
@@ -169,6 +181,28 @@
                     </ul>
                     <p><strong>How to Play:</strong> Click a face-up card to select it, then click where you want to move it. Double-click to auto-move to foundation.</p>
                     <p><strong>Tip:</strong> Flip face-down cards as quickly as possible to open up more moves!</p>
+                </div>
+
+                <button class="rules-header" onclick="toggleRules('videopoker-rules')">
+                    <span>🎰 Video Poker Rules</span>
+                    <span class="arrow">▼</span>
+                </button>
+                <div id="videopoker-rules" class="rules-content hidden">
+                    <p><strong>Objective:</strong> Build the best poker hand possible to win credits!</p>
+                    <p><em>Choose between two popular variants:</em></p>
+                    <ul>
+                        <li><strong>Jacks or Better:</strong> Need at least a pair of Jacks to win. Classic 9/6 paytable (99.54% RTP).</li>
+                        <li><strong>Deuces Wild:</strong> All 2s are wild! Need three of a kind or better to win. Higher variance.</li>
+                    </ul>
+                    <p><strong>How to Play:</strong></p>
+                    <ul>
+                        <li><strong>Bet:</strong> Choose your bet (1-5 credits) using Bet 1, Max Bet, Half, or Double</li>
+                        <li><strong>Deal:</strong> Press Deal to receive 5 cards</li>
+                        <li><strong>Hold:</strong> Click cards you want to keep (HOLD appears below held cards)</li>
+                        <li><strong>Draw:</strong> Press Draw to replace unheld cards</li>
+                        <li><strong>Payout:</strong> Winning hands are paid according to the paytable (bet max for 800x on Royal Flush!)</li>
+                    </ul>
+                    <p><strong>Keyboard:</strong> Press 1-5 to toggle hold, D or Space to Deal/Draw</p>
                 </div>
             </div>
         </section>

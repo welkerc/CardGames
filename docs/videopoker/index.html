@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Poker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <div class="header-left">
+                <h1>Video Poker</h1>
+                <a href="../" class="back-btn">← Back to Games</a>
+            </div>
+            <div class="header-right">
+                <button id="rules-btn" class="btn btn-secondary btn-sm">📖 Rules</button>
+                <div class="bankroll">
+                    <span>Credits: </span><span id="credits">100</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="variant-bar">
+            <button id="btn-jacks" class="btn btn-sm variant-btn active" data-variant="jacks">Jacks or Better</button>
+            <button id="btn-deuces" class="btn btn-sm variant-btn" data-variant="deuces">Deuces Wild</button>
+        </div>
+
+        <div class="game-area">
+            <div class="payout-section">
+                <div class="payout-header">Paytable (per credit bet)</div>
+                <div id="payout-content" class="payout-grid"></div>
+            </div>
+
+            <div class="message-area">
+                <p id="message">Place your bet and press Deal</p>
+            </div>
+
+            <div class="card-area" id="card-area"></div>
+
+            <div class="win-display" id="win-display"></div>
+        </div>
+
+        <div class="bet-area">
+            <div class="bet-controls">
+                <button id="bet-one" class="btn btn-secondary">Bet 1</button>
+                <button id="bet-max" class="btn btn-gold">Max Bet</button>
+                <button id="bet-half" class="btn btn-secondary">Half</button>
+                <button id="bet-double" class="btn btn-secondary">Double</button>
+            </div>
+            <div class="current-bet">
+                <span>Current Bet: </span><span id="current-bet">0</span>
+            </div>
+            <button id="btn-deal" class="btn btn-primary btn-lg">Deal</button>
+            <button id="btn-draw" class="btn btn-primary btn-lg hidden">Draw</button>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <span class="stat-label">Hands:</span>
+                <span id="stat-hands">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Wins:</span>
+                <span id="stat-wins">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Best Hand:</span>
+                <span id="stat-best">-</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Net:</span>
+                <span id="stat-profit">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="rules-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>🎰 Video Poker Rules</h2>
+            <div class="rules-text">
+                <p><strong>Objective:</strong> Build the best poker hand possible to win credits!</p>
+                
+                <h4>Variants</h4>
+                <ul>
+                    <li><strong>Jacks or Better:</strong> Need at least a pair of Jacks to win. Classic 9/6 paytable (99.54% RTP).</li>
+                    <li><strong>Deuces Wild:</strong> All 2s are wild! Need three of a kind or better to win. Higher variance.</li>
+                </ul>
+                
+                <h4>How to Play</h4>
+                <ul>
+                    <li><strong>Bet:</strong> Choose your bet (1-5 credits) using Bet 1, Max Bet, Half, or Double</li>
+                    <li><strong>Deal:</strong> Press Deal to receive 5 cards</li>
+                    <li><strong>Hold:</strong> Click cards you want to keep (they become highlighted)</li>
+                    <li><strong>Draw:</strong> Press Draw to replace unheld cards</li>
+                    <li><strong>Payout:</strong> Winning hands are paid according to the paytable</li>
+                    <li><strong>Max Bet Bonus:</strong> Bet 5 credits on a Royal Flush for 800x payout!</li>
+                </ul>
+                
+                <h4>Keyboard Shortcuts</h4>
+                <ul>
+                    <li>Press <strong>1-5</strong> to toggle hold on cards</li>
+                    <li>Press <strong>D</strong> or <strong>Space</strong> to Deal/Draw</li>
+                </ul>
+            </div>
+            <button id="close-rules" class="btn btn-primary">Got It!</button>
+        </div>
+    </div>
+
+    <script src="js/game.js"></script>
+</body>
+</html>
