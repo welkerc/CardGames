@@ -74,48 +74,35 @@ function isWild(card) {
     return gameState.variant === 'deuces' && card.rank === '2';
 }
 
-function evaluateHand(hand, variant) {
-    const sortedHand = [...hand].sort((a, b) => {
-        if (isWild(a) && !isWild(b)) return 1;
-        if (!isWild(a) && isWild(b)) return -1;
-        return a.value - b.value;
-    });
+function canFormStraightWithWilds(nonWildCards, wildCount) {
+    if (nonWildCards.length === 0) return true;
 
-    const isDeuces = variant === 'deuces';
-    const wildCount = isDeuces ? hand.filter(c => c.rank === '2').length : 0;
-    const nonWildCards = sortedHand.filter(c => !isWild(c));
-    const nonWildSorted = nonWildCards.sort((a, b) => a.value - b.value);
+    const vals = nonWildCards.map(c => c.value);
+    const uniqueVals = [...new Set(vals)].sort((a, b) => a - b);
 
-    const suits = nonWildCards.map(c => c.suit);
-    const isFlush = nonWildCards.length >= 5 && 
-        nonWildCards.every(c => c.suit === suits[0]);
+    // Duplicate ranks among non-wilds can never form a straight
+    if (uniqueVals.length !== nonWildCards.length) return false;
 
-    let minVal = nonWildCards.length > 0 ? Math.min(...nonWildCards.map(c => c.value)) : 0;
-    
-    let isStraight = false;
-    if (nonWildSorted.length >= 5) {
-        const values = nonWildSorted.map(c => c.value);
-        const uniqueValues = [...new Set(values)].sort((a, b) => a - b);
-        
-        if (uniqueValues.length >= 5) {
-            for (let i = 0; i <= uniqueValues.length - 5; i++) {
-                const segment = uniqueValues.slice(i, i + 5);
-                if (segment[4] - segment[0] === 4) {
-                    isStraight = true;
-                    break;
-                }
-            }
-        }
+    // Check standard windows [low, low+4] — wilds fill the gaps
+    for (let low = 2; low <= 10; low++) {
+        const inWindow = uniqueVals.filter(v => v >= low && v <= low + 4);
+        if (inWindow.length === uniqueVals.length && 5 - uniqueVals.length <= wildCount) return true;
     }
 
-    const aceLowStraight = isDeuces && wildCount >= 1 && 
-        nonWildCards.some(c => c.rank === 'A') &&
-        nonWildCards.some(c => c.value === 2) &&
-        nonWildCards.some(c => c.value === 3) &&
-        nonWildCards.some(c => c.value === 4) &&
-        nonWildCards.some(c => c.value === 5);
+    // Check A-low straight [A,2,3,4,5]: since 2s are wild, non-wilds are A(14→1), 3, 4, 5
+    const aceLowVals = uniqueVals.map(v => v === 14 ? 1 : v).sort((a, b) => a - b);
+    const aceLowInWindow = aceLowVals.filter(v => v >= 1 && v <= 5);
+    if (aceLowInWindow.length === aceLowVals.length && 5 - aceLowVals.length <= wildCount) return true;
 
-    if (aceLowStraight) isStraight = true;
+    return false;
+}
+
+function evaluateHand(hand, variant) {
+    const isDeuces = variant === 'deuces';
+    const wildCount = isDeuces ? hand.filter(c => c.rank === '2').length : 0;
+
+    const nonWildCards = hand.filter(c => !(isDeuces && c.rank === '2'));
+    const nonWildSorted = [...nonWildCards].sort((a, b) => a.value - b.value);
 
     const valueCounts = {};
     for (const card of nonWildCards) {
@@ -124,36 +111,85 @@ function evaluateHand(hand, variant) {
     const counts = Object.values(valueCounts).sort((a, b) => b - a);
 
     if (isDeuces) {
-        if (isFlush && isStraight && wildCount === 0) {
-            const hasAce = nonWildCards.some(c => c.rank === 'A');
-            const hasTen = nonWildCards.some(c => c.rank === '10');
-            const hasJack = nonWildCards.some(c => c.rank === 'J');
-            const hasQueen = nonWildCards.some(c => c.rank === 'Q');
-            const hasKing = nonWildCards.some(c => c.rank === 'K');
-            if (hasAce && hasTen && hasJack && hasQueen && hasKing) {
+        if (wildCount === 4) return { name: 'four-deuces', display: 'Four Deuces', isNatural: false };
+
+        const allSameSuit = nonWildCards.length > 0 && nonWildCards.every(c => c.suit === nonWildCards[0].suit);
+        const flushPossible = nonWildCards.length === 0 || allSameSuit;
+        const straightPossible = canFormStraightWithWilds(nonWildCards, wildCount);
+
+        // Natural Royal Flush — no wilds, A-K-Q-J-10 same suit
+        if (wildCount === 0 && flushPossible && straightPossible) {
+            const vals = nonWildSorted.map(c => c.value);
+            if (vals.length === 5 && vals[0] === 10 && vals[4] === 14) {
                 return { name: 'royal-flush', display: 'Natural Royal Flush', isNatural: true };
             }
+        }
+
+        // Wild Royal Flush — wilds fill in to A-K-Q-J-10 same suit
+        if (wildCount > 0 && flushPossible && straightPossible) {
+            const royalSet = new Set([10, 11, 12, 13, 14]);
+            const nonWildVals = nonWildSorted.map(c => c.value);
+            if (nonWildVals.every(v => royalSet.has(v)) && new Set(nonWildVals).size === nonWildVals.length) {
+                return { name: 'wild-royal', display: 'Wild Royal Flush', isNatural: false };
+            }
+        }
+
+        // Five of a Kind
+        if (counts.length > 0 && counts[0] + wildCount >= 5) {
+            return { name: 'five-kind', display: 'Five of a Kind', isNatural: false };
+        }
+
+        // Straight Flush
+        if (flushPossible && straightPossible) {
             return { name: 'straight-flush', display: 'Straight Flush', isNatural: false };
         }
-        if (isFlush && isStraight) {
-            return { name: 'wild-royal', display: 'Wild Royal Flush', isNatural: false };
+
+        // Four of a Kind
+        if (counts.length > 0 && counts[0] + wildCount >= 4) {
+            return { name: 'four-kind', display: 'Four of a Kind', isNatural: false };
         }
-        if (wildCount === 4) return { name: 'four-deuces', display: 'Four Deuces', isNatural: false };
-        if (wildCount === 3 && nonWildSorted.length === 2) return { name: 'four-kind', display: 'Four of a Kind', isNatural: false };
-        if (wildCount === 2 && nonWildSorted.length === 3) return { name: 'four-kind', display: 'Four of a Kind', isNatural: false };
-        if (wildCount === 1 && nonWildSorted.length === 4) return { name: 'four-kind', display: 'Four of a Kind', isNatural: false };
-        if (isFlush) return { name: 'flush', display: 'Flush', isNatural: false };
-        if (isStraight) return { name: 'straight', display: 'Straight', isNatural: false };
-        if (counts[0] === 2 && counts[1] === 2) return { name: 'full-house', display: 'Full House', isNatural: false };
-        if (nonWildSorted.length >= 5 && isFlush) return { name: 'flush', display: 'Flush', isNatural: false };
-        if (nonWildSorted.length >= 5 && isStraight) return { name: 'wild-royal', display: 'Wild Royal Flush', isNatural: false };
-        if (nonWildSorted.length === 5) return { name: 'five-kind', display: 'Five of a Kind', isNatural: false };
-        if (wildCount === 2 && nonWildSorted.length === 1) return { name: 'four-kind', display: 'Four of a Kind', isNatural: false };
-        if (wildCount === 1 && nonWildSorted.length <= 2) return { name: 'three-kind', display: 'Three of a Kind', isNatural: false };
-        if (counts[0] === 3) return { name: 'four-kind', display: 'Four of a Kind', isNatural: false };
-        if (counts[0] === 2) return { name: 'three-kind', display: 'Three of a Kind', isNatural: false };
-        if (counts[0] === 1) return { name: 'three-kind', display: 'Three of a Kind', isNatural: false };
+
+        // Full House: natural (3+2) or with 1 wild turning a two-pair into 3+2
+        if (wildCount === 0 && counts.length >= 2 && counts[0] === 3 && counts[1] === 2) {
+            return { name: 'full-house', display: 'Full House', isNatural: false };
+        }
+        if (wildCount === 1 && counts.length >= 2 && counts[0] === 2 && counts[1] === 2) {
+            return { name: 'full-house', display: 'Full House', isNatural: false };
+        }
+
+        // Flush
+        if (flushPossible) {
+            return { name: 'flush', display: 'Flush', isNatural: false };
+        }
+
+        // Straight
+        if (straightPossible) {
+            return { name: 'straight', display: 'Straight', isNatural: false };
+        }
+
+        // Three of a Kind (minimum winning hand in Deuces Wild)
+        if (counts.length > 0 && counts[0] + wildCount >= 3) {
+            return { name: 'three-kind', display: 'Three of a Kind', isNatural: false };
+        }
+
+        return { name: null, display: 'No Win', isNatural: false };
     } else {
+        const suits = nonWildCards.map(c => c.suit);
+        const isFlush = nonWildCards.length >= 5 && nonWildCards.every(c => c.suit === suits[0]);
+
+        const minVal = nonWildCards.length > 0 ? Math.min(...nonWildCards.map(c => c.value)) : 0;
+
+        let isStraight = false;
+        if (nonWildSorted.length >= 5) {
+            const uniqueValues = [...new Set(nonWildSorted.map(c => c.value))].sort((a, b) => a - b);
+            if (uniqueValues.length >= 5) {
+                for (let i = 0; i <= uniqueValues.length - 5; i++) {
+                    const segment = uniqueValues.slice(i, i + 5);
+                    if (segment[4] - segment[0] === 4) { isStraight = true; break; }
+                }
+            }
+        }
+
         if (isFlush && isStraight && minVal === 10) {
             return { name: 'royal-flush', display: 'Royal Flush', isNatural: true };
         }
